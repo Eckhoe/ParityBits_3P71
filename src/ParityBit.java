@@ -1,3 +1,5 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Scanner;
 
 /*
@@ -9,30 +11,61 @@ import java.util.Scanner;
 public class ParityBit {
     Scanner sc;
     int epochs;
-    float learningRate;
-    float meanSquareError;
-    float[] input; //represents four neurons which take the input
-    float[] hidden;//holds neurons used for the hidden layer
-    float output;//holds the output value
+    double learningRate;
+    double meanSquareError;
+    double[] input; //represents four neurons which take the input
+    double[] hidden;//holds neurons used for the hidden layer
+    double output;//holds the output value
 
     public ParityBit() {
 
-        input = new float[4];
+        input = new double[4];
         sc = new Scanner(System.in);
-        System.out.println("How many neurons would you like in the hidden layer: \n");
-        hidden = new float[sc.nextInt()];
-        System.out.println("Enter the number of epochs you would like to use: \n");
+        System.out.println("How many neurons would you like in the hidden layer:");
+        hidden = new double[sc.nextInt()];
+        System.out.println("Enter the number of epochs you would like to use:");
         epochs = sc.nextInt();
-        //read data from file
-        for(int i = 0; i < epochs; i++){
-            //do computation
-            if(i%500 == 0)
-                iterationInfo(i);
+        try {
+            sc = new Scanner(new File("data.txt"));
+            for (int i = 0; i < epochs; i++) {
+                //read the line from file
+
+                if (i % 500 == 0)
+                    iterationInfo(i);
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
 
-
-
         sc.close();
+    }
+
+    private double generateWeights(){
+        return (1 - Math.random() * ((1 - (-1))));
+    }
+
+    private double forwardPass(int index){
+        return 0;
+    }
+
+    //multiply a1 with w2 (weights)
+    private double multiplyMatrices(){
+        double x = 0;
+
+        return x;
+    }
+
+    private double[] activationFunction(){
+        double [] array = new double[input.length];
+        for(int i = 0; i < array.length; i++){
+            array[i] = sigmoidFunction(input[i]);
+        }
+        return array;
+    }
+
+    //this is the sigmoid function
+    private double sigmoidFunction(double x){
+        return (1 /(1+ Math.exp(-x)));
     }
 
     private void iterationInfo(int epoch){
