@@ -1,90 +1,131 @@
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Scanner;
 
-/*
-    Name: David Bailey
-    ID: 6675482
-    Date: November 19, 2021
- */
-
 public class ParityBit {
+
     Scanner sc;
     int epochs;
-    double learningRate;
-    double meanSquareError;
-    double[] input; //represents four neurons which take the input
-    double[] hidden;//holds neurons used for the hidden layer
-    double output;//holds the output value
+    int expectedOutput;
+    float[] layerOne;
+    float[] layerTwo;
+    float[] layerThree;
+    float[] dHiddenToInput;
+    float[] dOutputToHidden;
+    float[] aLayerOne;
+    float[] aLayerTwo;
+    float[] aLayerThree;
+    float[][] layerOneWeights;
+    float[][] layerTwoWeights;
+    float learningRate;
 
     public ParityBit() {
 
-        input = new double[4];
         sc = new Scanner(System.in);
+        System.out.println("What is the learning rate that you would like to use:");
+        learningRate = sc.nextFloat();
+        System.out.println("How many neurons would you like in the input layer:");
+        layerOne = new float[sc.nextInt()];
         System.out.println("How many neurons would you like in the hidden layer:");
-        hidden = new double[sc.nextInt()];
+        layerTwo = new float[sc.nextInt()];
+        System.out.println("How many neurons would you like in the output layer:");
+        layerThree = new float[sc.nextInt()];
         System.out.println("Enter the number of epochs you would like to use:");
         epochs = sc.nextInt();
-        try {
-            sc = new Scanner(new File("data.txt"));
-            for (int i = 0; i < epochs; i++) {
-                //read the line from file
+        dHiddenToInput = new float[layerTwo.length];
+        dOutputToHidden = new float[layerThree.length];
+        //Initialize arrays that hold the weights and generates the weights
+        layerOneWeights = new float[layerTwo.length][layerOne.length];
+        layerTwoWeights = new float[layerThree.length][layerTwo.length];
+        generateWeights(layerOneWeights);
+        generateWeights(layerTwoWeights);
 
-                if (i % 500 == 0)
-                    iterationInfo(i);
+        //feeds forward all layers
+        aLayerOne = sigmoidFunction(layerOne);
+        layerTwo = nextLayer(layerOneWeights, layerOne, layerTwo);
+        aLayerTwo = sigmoidFunction(layerTwo);
+        layerThree = nextLayer(layerTwoWeights, layerTwo, layerThree);
+        aLayerThree = sigmoidFunction(layerThree);
+
+        //performs the backprop on the layers
+        dOutput();
+        dHidden();
+        reWeightOne();
+        reWeightTwo();
+    }
+
+    private void reWeightOne() {
+        float newWeight = 0;
+        for (int i = 0; i < dHiddenToInput.length; i++) {
+            newWeight = dHiddenToInput[i] * aLayerTwo[i] * learningRate;
+            for (int j = 0; j < layerOneWeights[i].length; j++) {
+                layerOneWeights[i][j] -= newWeight;
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         }
 
-        sc.close();
     }
 
-    private double generateWeights(){
-        return (1 - Math.random() * ((1 - (-1))));
-    }
-
-    private double forwardPass(int index){
-        return 0;
-    }
-
-    //multiply a1 with w2 (weights)
-    private double multiplyMatrices(){
-        double x = 0;
-
-        return x;
-    }
-
-    private double[] activationFunction(){
-        double [] array = new double[input.length];
-        for(int i = 0; i < array.length; i++){
-            array[i] = sigmoidFunction(input[i]);
+    private void reWeightTwo() {
+        float newWeight = 0;
+        for (int i = 0; i < dOutputToHidden.length; i++) {
+            newWeight = dOutputToHidden[i] * aLayerThree[i] * learningRate;
+            for (int j = 0; j < layerTwoWeights[i].length; j++) {
+                layerTwoWeights[i][j] -= newWeight;
+            }
         }
-        return array;
     }
 
-    //this is the sigmoid function
-    private double sigmoidFunction(double x){
-        return (1 /(1+ Math.exp(-x)));
+    private void dHidden() {
+        for (int i = 0; i < dOutputToHidden.length; i++) {
+            for (int j = 0; j < layerTwoWeights[i].length; j++) {
+                dHiddenToInput[i] = dOutputToHidden[i] * layerTwoWeights[i][j];
+                dHiddenToInput[i] = sigmoidPrime(dHiddenToInput[i]);
+            }
+        }
+
     }
 
-    private void iterationInfo(int epoch){
-        System.out.println("Epoch: " + epoch +" Hidden Nodes: " + hidden.length + " Learning Rate: " + learningRate + " Mean Square Error: " + meanSquareError);
+    private void dOutput() {
+        for (int i = 0; i < layerThree.length; i++) {
+            dOutputToHidden[i] = (layerThree[i] - expectedOutput);
+            dOutputToHidden[i] = (dOutputToHidden[i] * sigmoidPrime(layerThree[i]));
+        }
+    }
+
+    private float[] nextLayer(float[][] currWeights, float[] currLayer, float[] nextLayer) {
+        float temp = 0;
+        for (int i = 0; i < currWeights.length; i++) {
+            for (int j = 0; j < currWeights[i].length; j++) {
+                temp += currWeights[i][j] * currLayer[j];
+            }
+            nextLayer[i] = temp;
+        }
+        return nextLayer;
+    }
+
+    private float costFunction(float x) {
+        return (float) Math.pow((x - expectedOutput), 2);
+    }
+
+    private float[] sigmoidFunction(float[] currLayer) {
+        for (int i = 0; i < currLayer.length; i++) {
+            currLayer[i] = (float) (1 / (1 + Math.exp(-currLayer[i])));
+        }
+        return currLayer;
+    }
+
+    private float sigmoidPrime(float value) {
+        return value * (1 - value);
+    }
+
+    private float[][] generateWeights(float[][] currentWeights) {
+        for (int i = 0; i < currentWeights.length; i++) {
+            for (int j = 0; j < currentWeights[i].length; j++) {
+                currentWeights[i][j] = (float) (1 - Math.random() * ((1 - (-1))));
+            }
+        }
+        return currentWeights;
     }
 
     public static void main(String[] args) {
         new ParityBit();
     }
-
 }
-
-/*
-        1. Even number of ones, parity bit is one
-        2. Odd number of ones, parity bit is zero
-        3. Should maintain an odd number of ones from the original 8 bits when applying the parity bit (odd parity)
-            -Standard PC memory is odd parity
-        4. If there are an odd number of ones and parity bit is set to one, system will be looking for even parity
-
-
-        IMPLMENTATION: Train feed-forward neural net with back prop. to act as a parity checking system
-     */
